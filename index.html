@@ -929,36 +929,33 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ECUADOR_TZ = 'America/Guayaquil'; // UTC-5, no DST
 
 // All WC 2026 teams (48-team format) — ISO2 + display names
+// Official FIFA World Cup 2026 qualified teams (48 teams)
 const TEAMS = [
-  // CONMEBOL
-  {iso:'ar',name:'Argentina'},{iso:'br',name:'Brasil'},{iso:'co',name:'Colombia'},
-  {iso:'ec',name:'Ecuador'},{iso:'uy',name:'Uruguay'},{iso:'ve',name:'Venezuela'},
-  {iso:'pe',name:'Perú'},{iso:'py',name:'Paraguay'},{iso:'bo',name:'Bolivia'},
-  {iso:'cl',name:'Chile'},
   // CONCACAF
-  {iso:'us',name:'Estados Unidos'},{iso:'mx',name:'México'},{iso:'ca',name:'Canadá'},
-  {iso:'cr',name:'Costa Rica'},{iso:'pa',name:'Panamá'},{iso:'hn',name:'Honduras'},
-  {iso:'jm',name:'Jamaica'},{iso:'gt',name:'Guatemala'},{iso:'sv',name:'El Salvador'},
-  {iso:'tt',name:'Trinidad y Tobago'},
+  {iso:'us', name:'Estados Unidos'}, {iso:'mx', name:'México'},      {iso:'ca', name:'Canadá'},
+  {iso:'pa', name:'Panamá'},         {iso:'cr', name:'Costa Rica'},
+  // CONMEBOL
+  {iso:'ec', name:'Ecuador'},        {iso:'br', name:'Brasil'},       {iso:'ar', name:'Argentina'},
+  {iso:'uy', name:'Uruguay'},        {iso:'co', name:'Colombia'},     {iso:'ve', name:'Venezuela'},
+  {iso:'pe', name:'Perú'},           {iso:'cl', name:'Chile'},        {iso:'bo', name:'Bolivia'},
+  {iso:'py', name:'Paraguay'},
   // UEFA
-  {iso:'fr',name:'Francia'},{iso:'de',name:'Alemania'},{iso:'es',name:'España'},
-  {iso:'pt',name:'Portugal'},{iso:'nl',name:'Países Bajos'},{iso:'be',name:'Bélgica'},
-  {iso:'gb-eng',name:'Inglaterra'},{iso:'it',name:'Italia'},{iso:'hr',name:'Croacia'},
-  {iso:'rs',name:'Serbia'},{iso:'ch',name:'Suiza'},{iso:'pl',name:'Polonia'},
-  {iso:'dk',name:'Dinamarca'},{iso:'tr',name:'Turquía'},{iso:'ua',name:'Ucrania'},
-  {iso:'at',name:'Austria'},{iso:'hu',name:'Hungría'},{iso:'ro',name:'Rumanía'},
-  {iso:'sk',name:'Eslovaquia'},{iso:'ge',name:'Georgia'},{iso:'al',name:'Albania'},
+  {iso:'es', name:'España'},         {iso:'de', name:'Alemania'},     {iso:'fr', name:'Francia'},
+  {iso:'gb-eng', name:'Inglaterra'}, {iso:'pt', name:'Portugal'},     {iso:'nl', name:'Países Bajos'},
+  {iso:'be', name:'Bélgica'},        {iso:'it', name:'Italia'},       {iso:'hr', name:'Croacia'},
+  {iso:'ch', name:'Suiza'},          {iso:'at', name:'Austria'},      {iso:'rs', name:'Serbia'},
+  {iso:'cz', name:'Rep. Checa'},     {iso:'hu', name:'Hungría'},      {iso:'gb-sct', name:'Escocia'},
+  {iso:'tr', name:'Turquía'},        {iso:'ua', name:'Ucrania'},      {iso:'pl', name:'Polonia'},
   // CAF
-  {iso:'ma',name:'Marruecos'},{iso:'sn',name:'Senegal'},{iso:'ng',name:'Nigeria'},
-  {iso:'eg',name:'Egipto'},{iso:'gh',name:'Ghana'},{iso:'cm',name:'Camerún'},
-  {iso:'ci',name:'Costa de Marfil'},{iso:'dz',name:'Argelia'},{iso:'tn',name:'Túnez'},
-  {iso:'ml',name:'Malí'},
+  {iso:'ma', name:'Marruecos'},      {iso:'sn', name:'Senegal'},      {iso:'eg', name:'Egipto'},
+  {iso:'ng', name:'Nigeria'},        {iso:'cm', name:'Camerún'},      {iso:'za', name:'Sudáfrica'},
+  {iso:'gh', name:'Ghana'},          {iso:'tn', name:'Túnez'},        {iso:'dz', name:'Argelia'},
+  {iso:'ci', name:'Costa de Marfil'},{iso:'cd', name:'R.D. Congo'},
   // AFC
-  {iso:'jp',name:'Japón'},{iso:'kr',name:'Corea del Sur'},{iso:'ir',name:'Irán'},
-  {iso:'au',name:'Australia'},{iso:'sa',name:'Arabia Saudita'},{iso:'qa',name:'Catar'},
-  {iso:'jo',name:'Jordania'},{iso:'iq',name:'Iraq'},
+  {iso:'au', name:'Australia'},      {iso:'jp', name:'Japón'},        {iso:'kr', name:'Corea del Sur'},
+  {iso:'ir', name:'Irán'},           {iso:'sa', name:'Arabia Saudita'},
   // OFC
-  {iso:'nz',name:'Nueva Zelanda'},
+  {iso:'nz', name:'Nueva Zelanda'},
 ];
 
 const TEAM_MAP = {};
@@ -1704,26 +1701,40 @@ async function finishOnboarding() {
   btn.disabled = true;
 
   try {
-    const { data, error } = await db.from('users').insert({
+    // Step 1: insert (don't chain .select() — RLS can silently return null on read-back)
+    const { error: insertError } = await db.from('users').insert({
       username,
       favorite_team:   obFavTeam,
       following_teams: [...obFollowTeams],
       group_name:      obGroup,
       total_points:    0,
-    }).select().single();
+    });
 
-    if (error) {
-      if (error.code === '23505') toast('Nombre de usuario ya en uso — elige otro');
-      else toast('Error: ' + error.message);
+    if (insertError) {
+      if (insertError.code === '23505') toast('Nombre de usuario ya en uso — elige otro');
+      else toast('Error al guardar: ' + insertError.message);
       btn.textContent = 'EMPEZAR →';
       btn.disabled = false;
-      goToStep(1);
+      return; // stay on current step, don't reset to step 1
+    }
+
+    // Step 2: fetch the newly created row by username
+    const { data, error: fetchError } = await db
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (fetchError || !data) {
+      toast('Perfil creado, pero error al cargarlo: ' + (fetchError?.message || 'intenta de nuevo'));
+      btn.textContent = 'EMPEZAR →';
+      btn.disabled = false;
       return;
     }
 
+    // Step 3: persist and enter the app
     localStorage.setItem('mundial_user_id', data.id);
     currentUser = data;
-    // Default leaderboard to user's own group
     lbFilter = data.group_name || 'familia';
     await initApp();
   } catch(e) {
