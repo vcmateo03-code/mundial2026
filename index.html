@@ -1357,7 +1357,13 @@ function renderBracket() {
 // ═══════════════════════════════════════════════════════════════════════════
 //  PREDICTIONS / LEADERBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════
+function isAdmin() {
+  return (currentUser?.username || '').toLowerCase() === 'mateo';
+}
+
 function switchLbTab(filter) {
+  // Non-admins can only see their own group tab — ignore any other filter
+  if (!isAdmin()) return;
   lbFilter = filter;
   document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('lb-tab-' + filter).classList.add('active');
@@ -1365,7 +1371,14 @@ function switchLbTab(filter) {
 }
 
 async function renderPredictionsTab() {
-  // Sync active tab highlight (e.g. on first load)
+  // Show/hide the tab bar: only admin sees all tabs
+  const tabBar = document.querySelector('.lb-tabs');
+  if (tabBar) tabBar.style.display = isAdmin() ? 'flex' : 'none';
+
+  // Force non-admins to their own group, ignoring lbFilter
+  if (!isAdmin()) lbFilter = currentUser?.group_name || 'familia';
+
+  // Sync active tab highlight
   document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
   const activeTabEl = document.getElementById('lb-tab-' + lbFilter);
   if (activeTabEl) activeTabEl.classList.add('active');
