@@ -930,31 +930,33 @@ const ECUADOR_TZ = 'America/Guayaquil'; // UTC-5, no DST
 
 // All WC 2026 teams (48-team format) — ISO2 + display names
 // Official FIFA World Cup 2026 qualified teams (48 teams)
+// ── Verified FIFA World Cup 2026 — all 48 qualified teams ──────────────────
+// Sources: FIFA.com, worldcuppass.com, ritfitsports.com (June 2026)
+// CONCACAF(6) + CONMEBOL(6) + UEFA(16) + CAF(10) + AFC(9) + OFC(1) = 48
 const TEAMS = [
-  // CONCACAF
-  {iso:'us', name:'Estados Unidos'}, {iso:'mx', name:'México'},      {iso:'ca', name:'Canadá'},
-  {iso:'pa', name:'Panamá'},         {iso:'cr', name:'Costa Rica'},
-  // CONMEBOL
-  {iso:'ec', name:'Ecuador'},        {iso:'br', name:'Brasil'},       {iso:'ar', name:'Argentina'},
-  {iso:'uy', name:'Uruguay'},        {iso:'co', name:'Colombia'},     {iso:'ve', name:'Venezuela'},
-  {iso:'pe', name:'Perú'},           {iso:'cl', name:'Chile'},        {iso:'bo', name:'Bolivia'},
-  {iso:'py', name:'Paraguay'},
-  // UEFA
-  {iso:'es', name:'España'},         {iso:'de', name:'Alemania'},     {iso:'fr', name:'Francia'},
-  {iso:'gb-eng', name:'Inglaterra'}, {iso:'pt', name:'Portugal'},     {iso:'nl', name:'Países Bajos'},
-  {iso:'be', name:'Bélgica'},        {iso:'it', name:'Italia'},       {iso:'hr', name:'Croacia'},
-  {iso:'ch', name:'Suiza'},          {iso:'at', name:'Austria'},      {iso:'rs', name:'Serbia'},
-  {iso:'cz', name:'Rep. Checa'},     {iso:'hu', name:'Hungría'},      {iso:'gb-sct', name:'Escocia'},
-  {iso:'tr', name:'Turquía'},        {iso:'ua', name:'Ucrania'},      {iso:'pl', name:'Polonia'},
-  // CAF
-  {iso:'ma', name:'Marruecos'},      {iso:'sn', name:'Senegal'},      {iso:'eg', name:'Egipto'},
-  {iso:'ng', name:'Nigeria'},        {iso:'cm', name:'Camerún'},      {iso:'za', name:'Sudáfrica'},
-  {iso:'gh', name:'Ghana'},          {iso:'tn', name:'Túnez'},        {iso:'dz', name:'Argelia'},
-  {iso:'ci', name:'Costa de Marfil'},{iso:'cd', name:'R.D. Congo'},
-  // AFC
-  {iso:'au', name:'Australia'},      {iso:'jp', name:'Japón'},        {iso:'kr', name:'Corea del Sur'},
-  {iso:'ir', name:'Irán'},           {iso:'sa', name:'Arabia Saudita'},
-  // OFC
+  // CONCACAF (6)
+  {iso:'us', name:'Estados Unidos'}, {iso:'mx', name:'México'},       {iso:'ca', name:'Canadá'},
+  {iso:'pa', name:'Panamá'},         {iso:'ht', name:'Haití'},         {iso:'cw', name:'Curaçao'},
+  // CONMEBOL (6)
+  {iso:'ar', name:'Argentina'},      {iso:'br', name:'Brasil'},        {iso:'co', name:'Colombia'},
+  {iso:'ec', name:'Ecuador'},        {iso:'uy', name:'Uruguay'},       {iso:'py', name:'Paraguay'},
+  // UEFA (16)
+  {iso:'fr', name:'Francia'},        {iso:'es', name:'España'},        {iso:'gb-eng', name:'Inglaterra'},
+  {iso:'pt', name:'Portugal'},       {iso:'de', name:'Alemania'},      {iso:'nl', name:'Países Bajos'},
+  {iso:'be', name:'Bélgica'},        {iso:'hr', name:'Croacia'},       {iso:'ch', name:'Suiza'},
+  {iso:'at', name:'Austria'},        {iso:'gb-sct', name:'Escocia'},   {iso:'no', name:'Noruega'},
+  {iso:'se', name:'Suecia'},         {iso:'tr', name:'Turquía'},       {iso:'cz', name:'Rep. Checa'},
+  {iso:'ba', name:'Bosnia y Herz.'},
+  // CAF (10)
+  {iso:'ma', name:'Marruecos'},      {iso:'sn', name:'Senegal'},       {iso:'eg', name:'Egipto'},
+  {iso:'tn', name:'Túnez'},          {iso:'dz', name:'Argelia'},       {iso:'za', name:'Sudáfrica'},
+  {iso:'ci', name:'Costa de Marfil'},{iso:'gh', name:'Ghana'},         {iso:'cv', name:'Cabo Verde'},
+  {iso:'cd', name:'R.D. Congo'},
+  // AFC (9)
+  {iso:'jp', name:'Japón'},          {iso:'ir', name:'Irán'},          {iso:'kr', name:'Corea del Sur'},
+  {iso:'au', name:'Australia'},      {iso:'uz', name:'Uzbekistán'},    {iso:'jo', name:'Jordania'},
+  {iso:'qa', name:'Catar'},          {iso:'sa', name:'Arabia Saudita'},{iso:'iq', name:'Iraq'},
+  // OFC (1)
   {iso:'nz', name:'Nueva Zelanda'},
 ];
 
