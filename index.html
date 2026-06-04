@@ -986,7 +986,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════════════════════════════════
 //  APP STATE
 // ═══════════════════════════════════════════════════════════════════════════
-let currentUser = null;   // { id, username, favorite_team, following_teams, total_points }
+let currentUser = null;   // { id, name, favorite_team, followed_teams, group_name, total_points }
 let allMatches  = [];
 let allStandings = [];
 let realtimeChannel = null;
@@ -1184,7 +1184,7 @@ function stageLabel(stage) {
 function renderHome() {
   if (!currentUser) return;
   const fav      = currentUser.favorite_team;
-  const following = currentUser.following_teams || [];
+  const following = currentUser.followed_teams || [];
   const now = Date.now();
 
   // Sort matches by kickoff
@@ -1194,7 +1194,7 @@ function renderHome() {
   const favMatches = sorted.filter(m => (m.home_team === fav || m.away_team === fav));
   const favLive    = favMatches.find(m => m.status === 'LIVE' || m.status === 'HT');
   const favNext    = favLive || favMatches.find(m => m.status === 'SCHEDULED');
-  const isAdmin = (currentUser.username || '').toLowerCase() === 'mateo';
+  const isAdmin = (currentUser.name || '').toLowerCase() === 'mateo';
   document.getElementById('section-featured').innerHTML =
     (isAdmin ? `<button class="admin-sync-btn" id="admin-sync-btn" onclick="adminSync()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1357,7 +1357,7 @@ function renderBracket() {
 //  PREDICTIONS / LEADERBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════
 function isAdmin() {
-  return (currentUser?.username || '').toLowerCase() === 'mateo';
+  return (currentUser?.name || '').toLowerCase() === 'mateo';
 }
 
 function switchLbTab(filter) {
@@ -1385,7 +1385,7 @@ async function renderPredictionsTab() {
   // Fetch ALL users (we filter client-side so mateo can appear in both)
   const { data: allUsers, error } = await db
     .from('users')
-    .select('id,username,favorite_team,total_points,group_name')
+    .select('id,name,favorite_team,total_points,group_name')
     .order('total_points', { ascending: false })
     .limit(200);
 
@@ -1394,7 +1394,7 @@ async function renderPredictionsTab() {
   // Filter by group. Admin "mateo" always appears in both familia and amigos.
   const filtered = (allUsers || []).filter(u => {
     if (lbFilter === 'todos') return true;
-    if ((u.username || '').toLowerCase() === 'mateo') return true; // admin in all groups
+    if ((u.name || '').toLowerCase() === 'mateo') return true; // admin in all groups
     return (u.group_name || 'familia') === lbFilter;
   });
 
@@ -1416,7 +1416,7 @@ async function renderPredictionsTab() {
         <td><div class="rank-num ${rankClass}">${i+1}</div></td>
         <td><div class="lb-user">
           <img class="lb-flag" src="${flagUrl(u.favorite_team)}" alt="" loading="lazy"/>
-          <span>${u.username}${isMe?' (tú)':''}${groupBadge}</span>
+          <span>${u.name}${isMe?' (tú)':''}${groupBadge}</span>
         </div></td>
         <td><div class="lb-pts">${u.total_points}</div></td>
       </tr>`;
@@ -1703,43 +1703,56 @@ async function finishOnboarding() {
   btn.disabled = true;
 
   try {
-    // Step 1: insert (don't chain .select() — RLS can silently return null on read-back)
-    const { error: insertError } = await db.from('users').insert({
-      username,
-      favorite_team:   obFavTeam,
-      following_teams: [...obFollowTeams],
-      group_name:      obGroup,
-      total_points:    0,
-    });
+    // ── STEP 1: INSERT ───────────────────────────────────────────────────────
+    // Column names match actual Supabase table:
+    //   name, favorite_team, followed_teams (array), group_name, total_points
+    const insertPayload = {
+      name:           username,
+      favorite_team:  obFavTeam,
+      followed_teams: [...obFollowTeams],   // array, not string
+      group_name:     obGroup,
+      total_points:   0,
+    };
+    console.log('[registro] STEP 1 — inserting user payload:', insertPayload);
+
+    const { error: insertError } = await db.from('users').insert(insertPayload);
 
     if (insertError) {
+      console.error('[registro] insert error:', insertError);
       if (insertError.code === '23505') toast('Nombre de usuario ya en uso — elige otro');
       else toast('Error al guardar: ' + insertError.message);
       btn.textContent = 'EMPEZAR →';
       btn.disabled = false;
-      return; // stay on current step, don't reset to step 1
+      return;
     }
+    console.log('[registro] STEP 1 — insert OK');
 
-    // Step 2: fetch the newly created row by username
+    // ── STEP 2: FETCH BACK BY NAME ───────────────────────────────────────────
+    console.log('[registro] STEP 2 — fetching row by name:', username);
     const { data, error: fetchError } = await db
       .from('users')
       .select('*')
-      .eq('username', username)
+      .eq('name', username)
       .single();
 
     if (fetchError || !data) {
-      toast('Perfil creado, pero error al cargarlo: ' + (fetchError?.message || 'intenta de nuevo'));
+      console.error('[registro] fetch error:', fetchError, '| data:', data);
+      toast('Perfil creado pero error al cargar — intenta de nuevo');
       btn.textContent = 'EMPEZAR →';
       btn.disabled = false;
       return;
     }
+    console.log('[registro] STEP 2 — fetched user:', data);
 
-    // Step 3: persist and enter the app
+    // ── STEP 3: PERSIST AND LAUNCH ───────────────────────────────────────────
+    console.log('[registro] STEP 3 — saving to localStorage, key: mundial_user_id, value:', data.id);
     localStorage.setItem('mundial_user_id', data.id);
     currentUser = data;
     lbFilter = data.group_name || 'familia';
+    console.log('[registro] STEP 3 — calling initApp()');
     await initApp();
   } catch(e) {
+    console.error('[registro] unexpected error:', e);
     toast('Error inesperado: ' + e.message);
     btn.textContent = 'EMPEZAR →';
     btn.disabled = false;
@@ -1757,7 +1770,7 @@ async function initApp() {
   const avatarEl = document.getElementById('user-avatar-header');
   if (currentUser) {
     avatarEl.innerHTML = `<img src="${flagUrl(currentUser.favorite_team)}" alt=""/>`;
-    avatarEl.title = currentUser.username;
+    avatarEl.title = currentUser.name;
   }
 
   // Load data in parallel
