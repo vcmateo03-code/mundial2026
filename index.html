@@ -164,6 +164,54 @@ input{font-family:inherit;outline:none}
 .ob-btn:active{transform:translateY(0);opacity:1}
 .ob-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
+/* Group selector */
+.group-tiles{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.group-tile{
+  display:flex;align-items:center;gap:16px;
+  padding:20px 22px;border-radius:var(--radius);
+  border:2px solid var(--border);background:var(--glass);
+  cursor:pointer;transition:all .2s;user-select:none;
+}
+.group-tile:active{transform:scale(.98)}
+.group-tile.selected{
+  border-color:var(--gold);background:rgba(245,166,35,.1);
+  box-shadow:0 0 20px rgba(245,166,35,.2);
+}
+.group-tile-emoji{font-size:32px;flex-shrink:0}
+.group-tile-info{flex:1}
+.group-tile-name{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.08em;color:var(--text);
+}
+.group-tile.selected .group-tile-name{color:var(--gold)}
+.group-tile-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.group-tile-check{
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.group-tile.selected .group-tile-check{
+  background:var(--gold);border-color:var(--gold);color:#000;font-size:12px;
+}
+
+/* Leaderboard filter tabs */
+.lb-tabs{display:flex;gap:8px;margin-bottom:16px}
+.lb-tab{
+  flex:1;padding:10px 8px;border-radius:var(--radius-sm);
+  font-size:12px;font-weight:600;letter-spacing:.04em;
+  background:var(--glass);border:1px solid var(--border);color:var(--text2);
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.lb-tab.active{
+  background:rgba(245,166,35,.15);border-color:rgba(245,166,35,.4);color:var(--gold);
+}
+.lb-group-badge{
+  display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;
+  margin-left:4px;
+}
+.badge-familia{background:rgba(52,199,89,.15);color:var(--green);border:1px solid rgba(52,199,89,.3)}
+.badge-amigos{background:rgba(10,132,255,.15);color:#90caf9;border:1px solid rgba(10,132,255,.3)}
+
 /* Team grid */
 .team-grid{
   display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
@@ -694,6 +742,7 @@ input{font-family:inherit;outline:none}
       <div class="step-dot active" id="dot-1"></div>
       <div class="step-dot" id="dot-2"></div>
       <div class="step-dot" id="dot-3"></div>
+      <div class="step-dot" id="dot-4"></div>
     </div>
 
     <!-- Step 1: Name -->
@@ -706,23 +755,48 @@ input{font-family:inherit;outline:none}
       <button class="ob-btn" id="step1-next">CONTINUAR →</button>
     </div>
 
-    <!-- Step 2: Favorite team -->
+    <!-- Step 2: Group selection (NEW) -->
     <div class="step" id="step-2">
+      <div class="step-title">¿Cuál es tu grupo?</div>
+      <div class="step-sub">Compite en el marcador de tu grupo</div>
+      <div class="group-tiles">
+        <div class="group-tile" id="tile-familia" onclick="selectGroup('familia')">
+          <div class="group-tile-emoji">👨‍👩‍👧</div>
+          <div class="group-tile-info">
+            <div class="group-tile-name">FAMILIA</div>
+            <div class="group-tile-desc">Marcador privado con tu familia</div>
+          </div>
+          <div class="group-tile-check" id="check-familia"></div>
+        </div>
+        <div class="group-tile" id="tile-amigos" onclick="selectGroup('amigos')">
+          <div class="group-tile-emoji">🤟</div>
+          <div class="group-tile-info">
+            <div class="group-tile-name">AMIGOS</div>
+            <div class="group-tile-desc">Marcador privado con tus amigos</div>
+          </div>
+          <div class="group-tile-check" id="check-amigos"></div>
+        </div>
+      </div>
+      <button class="ob-btn" id="step2-next" disabled>CONTINUAR →</button>
+    </div>
+
+    <!-- Step 3: Favorite team (was step-2) -->
+    <div class="step" id="step-3">
       <div class="step-title">Tu Selección</div>
       <div class="step-sub">Elige tu equipo favorito — aparecerá destacado en tu inicio</div>
       <input class="search-teams" id="search-fav" placeholder="Buscar selección…" type="search"/>
       <div class="team-grid" id="grid-fav"></div>
-      <button class="ob-btn" id="step2-next" disabled>CONTINUAR →</button>
+      <button class="ob-btn" id="step3-next" disabled>CONTINUAR →</button>
     </div>
 
-    <!-- Step 3: Following teams -->
-    <div class="step" id="step-3">
+    <!-- Step 4: Following teams (was step-3) -->
+    <div class="step" id="step-4">
       <div class="step-title">¿A quién más sigues?</div>
       <div class="step-sub">Selecciona al menos 1 equipo más para seguir sus partidos</div>
       <div class="step3-count" id="follow-count">0 seleccionados</div>
       <input class="search-teams" id="search-follow" placeholder="Buscar selección…" type="search"/>
       <div class="team-grid" id="grid-follow"></div>
-      <button class="ob-btn" id="step3-next" disabled>EMPEZAR →</button>
+      <button class="ob-btn" id="step4-next" disabled>EMPEZAR →</button>
     </div>
   </div>
 </div>
@@ -789,7 +863,12 @@ input{font-family:inherit;outline:none}
 
     <!-- TAB 4: PREDICTIONS -->
     <div class="tab-content tab-panel" id="tab-predictions">
-      <div class="section-header"><div class="section-title">Marcador General</div></div>
+      <div class="section-header"><div class="section-title">Marcador</div></div>
+      <div class="lb-tabs">
+        <button class="lb-tab active" id="lb-tab-familia" onclick="switchLbTab('familia')">👨‍👩‍👧 Familia</button>
+        <button class="lb-tab" id="lb-tab-amigos"  onclick="switchLbTab('amigos')">🤟 Amigos</button>
+        <button class="lb-tab" id="lb-tab-todos"   onclick="switchLbTab('todos')">🌍 Todos</button>
+      </div>
       <div id="leaderboard-content">
         <div class="loading-spinner"><div class="spinner"></div></div>
       </div>
@@ -1278,16 +1357,36 @@ function renderBracket() {
 // ═══════════════════════════════════════════════════════════════════════════
 //  PREDICTIONS / LEADERBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════
+function switchLbTab(filter) {
+  lbFilter = filter;
+  document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('lb-tab-' + filter).classList.add('active');
+  renderPredictionsTab();
+}
+
 async function renderPredictionsTab() {
-  // Leaderboard
-  const { data: users, error } = await db
+  // Sync active tab highlight (e.g. on first load)
+  document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+  const activeTabEl = document.getElementById('lb-tab-' + lbFilter);
+  if (activeTabEl) activeTabEl.classList.add('active');
+
+  // Fetch ALL users (we filter client-side so mateo can appear in both)
+  const { data: allUsers, error } = await db
     .from('users')
-    .select('id,username,favorite_team,total_points')
+    .select('id,username,favorite_team,total_points,group_name')
     .order('total_points', { ascending: false })
-    .limit(50);
+    .limit(200);
 
   const lbEl = document.getElementById('leaderboard-content');
-  if (!users || users.length === 0) {
+
+  // Filter by group. Admin "mateo" always appears in both familia and amigos.
+  const filtered = (allUsers || []).filter(u => {
+    if (lbFilter === 'todos') return true;
+    if ((u.username || '').toLowerCase() === 'mateo') return true; // admin in all groups
+    return (u.group_name || 'familia') === lbFilter;
+  });
+
+  if (filtered.length === 0) {
     lbEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🏅</div>
       <div class="empty-title">Sin predicciones aún</div>
       <div class="empty-sub">¡Sé el primero en predecir!</div></div>`;
@@ -1295,14 +1394,17 @@ async function renderPredictionsTab() {
     let html = `<table class="leaderboard-table"><thead><tr>
       <th>#</th><th>Usuario</th><th style="text-align:right">Puntos</th>
     </tr></thead><tbody>`;
-    users.forEach((u, i) => {
+    filtered.forEach((u, i) => {
       const isMe = currentUser && u.id === currentUser.id;
       const rankClass = i===0?'rank-gold':i===1?'rank-silver':i===2?'rank-bronze':'';
+      const groupBadge = lbFilter === 'todos'
+        ? `<span class="lb-group-badge ${u.group_name==='amigos'?'badge-amigos':'badge-familia'}">${u.group_name==='amigos'?'🤟':'👨‍👩‍👧'}</span>`
+        : '';
       html += `<tr class="${isMe?'me':''}">
         <td><div class="rank-num ${rankClass}">${i+1}</div></td>
         <td><div class="lb-user">
           <img class="lb-flag" src="${flagUrl(u.favorite_team)}" alt="" loading="lazy"/>
-          <span>${u.username}${isMe?' (tú)':''}</span>
+          <span>${u.username}${isMe?' (tú)':''}${groupBadge}</span>
         </div></td>
         <td><div class="lb-pts">${u.total_points}</div></td>
       </tr>`;
@@ -1522,7 +1624,9 @@ function switchTab(tab) {
 // ═══════════════════════════════════════════════════════════════════════════
 let obFavTeam     = null;
 let obFollowTeams = new Set();
+let obGroup       = null;   // 'familia' | 'amigos'
 let obStep        = 1;
+let lbFilter      = 'familia'; // current leaderboard filter
 
 function renderTeamGrid(containerId, searchId, mode) {
   const search = document.getElementById(searchId)?.value.toLowerCase() || '';
@@ -1542,17 +1646,27 @@ function renderTeamGrid(containerId, searchId, mode) {
   }).join('');
 }
 
+function selectGroup(group) {
+  obGroup = group;
+  // Update tile highlight
+  ['familia','amigos'].forEach(g => {
+    document.getElementById('tile-'+g).classList.toggle('selected', g === group);
+    document.getElementById('check-'+g).textContent = g === group ? '✓' : '';
+  });
+  document.getElementById('step2-next').disabled = false;
+}
+
 function selectTeam(iso, mode) {
   if (mode === 'fav') {
     obFavTeam = iso;
-    document.getElementById('step2-next').disabled = false;
+    document.getElementById('step3-next').disabled = false;
     renderTeamGrid('grid-fav','search-fav','fav');
   } else {
     if (iso === obFavTeam) return; // can't follow own fav here
     if (obFollowTeams.has(iso)) obFollowTeams.delete(iso);
     else if (obFollowTeams.size < 16) obFollowTeams.add(iso);
     document.getElementById('follow-count').textContent = obFollowTeams.size + ' seleccionados';
-    document.getElementById('step3-next').disabled = obFollowTeams.size === 0;
+    document.getElementById('step4-next').disabled = obFollowTeams.size === 0;
     renderTeamGrid('grid-follow','search-follow','follow');
   }
 }
@@ -1570,9 +1684,9 @@ function goToStep(n) {
 
 async function finishOnboarding() {
   const username = document.getElementById('username-input').value.trim();
-  if (!username || !obFavTeam) return;
+  if (!username || !obFavTeam || !obGroup) return;
 
-  const btn = document.getElementById('step3-next');
+  const btn = document.getElementById('step4-next');
   btn.textContent = 'CREANDO PERFIL…';
   btn.disabled = true;
 
@@ -1581,6 +1695,7 @@ async function finishOnboarding() {
       username,
       favorite_team:   obFavTeam,
       following_teams: [...obFollowTeams],
+      group_name:      obGroup,
       total_points:    0,
     }).select().single();
 
@@ -1595,6 +1710,8 @@ async function finishOnboarding() {
 
     localStorage.setItem('mundial_user_id', data.id);
     currentUser = data;
+    // Default leaderboard to user's own group
+    lbFilter = data.group_name || 'familia';
     await initApp();
   } catch(e) {
     toast('Error inesperado: ' + e.message);
@@ -1633,6 +1750,7 @@ async function bootstrap() {
     const { data, error } = await db.from('users').select('*').eq('id', savedId).single();
     if (!error && data) {
       currentUser = data;
+      lbFilter = data.group_name || 'familia';
       await initApp();
       return;
     }
@@ -1657,14 +1775,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = document.getElementById('username-input').value.trim();
     if (!val || val.length < 2) { toast('Ingresa al menos 2 caracteres'); return; }
     goToStep(2);
-    renderTeamGrid('grid-fav','search-fav','fav');
   });
   document.getElementById('step2-next').addEventListener('click', () => {
     goToStep(3);
-    // Pre-mark fav in follow grid
+    renderTeamGrid('grid-fav','search-fav','fav');
+  });
+  document.getElementById('step3-next').addEventListener('click', () => {
+    goToStep(4);
     renderTeamGrid('grid-follow','search-follow','follow');
   });
-  document.getElementById('step3-next').addEventListener('click', finishOnboarding);
+  document.getElementById('step4-next').addEventListener('click', finishOnboarding);
 
   document.getElementById('search-fav').addEventListener('input', () => renderTeamGrid('grid-fav','search-fav','fav'));
   document.getElementById('search-follow').addEventListener('input', () => renderTeamGrid('grid-follow','search-follow','follow'));
@@ -1732,8 +1852,10 @@ async function adminSync() {
 
 // Expose functions used in inline onclick attributes
 window.openPredictModal = openPredictModal;
-window.selectTeam = selectTeam;
-window.adminSync = adminSync;
+window.selectTeam       = selectTeam;
+window.adminSync        = adminSync;
+window.selectGroup      = selectGroup;
+window.switchLbTab      = switchLbTab;
 </script>
 </body>
 </html>
