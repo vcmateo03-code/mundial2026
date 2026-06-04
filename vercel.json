@@ -1,47 +1,35 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
-  "routes": [
-    { "src": "/api/sync-matches",     "dest": "/api/sync-matches.js"     },
-    { "src": "/api/score-predictions","dest": "/api/score-predictions.js" },
-    { "src": "/api/test",             "dest": "/api/test.js"             },
-    { "handle": "filesystem" },
-    { "src": "/(.*)",                 "dest": "/index.html"              }
-  ],
+  },
   "crons": [
     {
       "path": "/api/sync-matches",
-      "schedule": "*/2 * * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/score-predictions",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 13 * * *"
     }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*"                   },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS"  },
+        { "key": "Access-Control-Allow-Origin",  "value": "*"                            },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS"           },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options",        "value": "DENY"                        },
-        { "key": "X-Content-Type-Options", "value": "nosniff"                     },
-        { "key": "X-XSS-Protection",       "value": "1; mode=block"               },
+        { "key": "X-Frame-Options",        "value": "DENY"                          },
+        { "key": "X-Content-Type-Options", "value": "nosniff"                       },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block"                 },
         { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" }
       ]
     }
