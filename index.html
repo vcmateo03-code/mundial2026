@@ -986,7 +986,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ═══════════════════════════════════════════════════════════════════════════
 //  APP STATE
 // ═══════════════════════════════════════════════════════════════════════════
-let currentUser = null;   // { id, name, favorite_team, followed_teams, group_name, total_points }
+let currentUser = null;   // { id, name, favorite_team, followed_teams, group_name, created_at }
 let allMatches  = [];
 let allStandings = [];
 let realtimeChannel = null;
@@ -1385,8 +1385,8 @@ async function renderPredictionsTab() {
   // Fetch ALL users (we filter client-side so mateo can appear in both)
   const { data: allUsers, error } = await db
     .from('users')
-    .select('id,name,favorite_team,total_points,group_name')
-    .order('total_points', { ascending: false })
+    .select('id,name,favorite_team,group_name')
+    .order('name', { ascending: true })
     .limit(200);
 
   const lbEl = document.getElementById('leaderboard-content');
@@ -1418,7 +1418,7 @@ async function renderPredictionsTab() {
           <img class="lb-flag" src="${flagUrl(u.favorite_team)}" alt="" loading="lazy"/>
           <span>${u.name}${isMe?' (tú)':''}${groupBadge}</span>
         </div></td>
-        <td><div class="lb-pts">${u.total_points}</div></td>
+        <td><div class="lb-pts">${u.total_points ?? 0}</div></td>
       </tr>`;
     });
     html += '</tbody></table>';
@@ -1704,14 +1704,13 @@ async function finishOnboarding() {
 
   try {
     // ── STEP 1: INSERT ───────────────────────────────────────────────────────
-    // Column names match actual Supabase table:
-    //   name, favorite_team, followed_teams (array), group_name, total_points
+    // Exact columns from Supabase: id, name, favorite_team, followed_teams, group_name, created_at
+    // NOTE: no total_points column — do NOT include it
     const insertPayload = {
       name:           username,
       favorite_team:  obFavTeam,
-      followed_teams: [...obFollowTeams],   // array, not string
+      followed_teams: [...obFollowTeams],   // text[] array
       group_name:     obGroup,
-      total_points:   0,
     };
     console.log('[registro] STEP 1 — inserting user payload:', insertPayload);
 

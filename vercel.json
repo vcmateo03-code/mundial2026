@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "",
+  "buildCommand": "echo 'no build'",
   "outputDirectory": ".",
+  "installCommand": "npm install",
   "crons": [
     {
       "path": "/api/sync-matches",
