@@ -1,0 +1,42 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Scheduled function: sync matches every 2 minutes
+# Netlify scheduled functions use cron syntax
+[[plugins]]
+  package = "@netlify/plugin-scheduled-functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Sync matches: every 2 minutes
+[functions."sync-matches"]
+  schedule = "*/2 * * * *"
+
+# Score predictions: every 5 minutes (checks for FT matches)
+[functions."score-predictions"]
+  schedule = "*/5 * * * *"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
