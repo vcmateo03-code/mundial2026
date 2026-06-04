@@ -2,13 +2,14 @@
   "name": "mundial-2026",
   "version": "1.0.0",
   "description": "FIFA World Cup 2026 web app",
+  "type": "commonjs",
   "scripts": {
-    "build": "echo 'Static site - no build step'"
+    "build": "echo 'Static site — no build step required'"
   },
   "engines": {
-    "node": ">=18"
+    "node": "18.x"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0"
+    "@supabase/supabase-js": "^2.39.0"
   }
 }
