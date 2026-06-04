@@ -7,7 +7,7 @@
     "build": "echo 'Static site — no build step required'"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
