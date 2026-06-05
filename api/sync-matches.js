@@ -97,41 +97,45 @@ module.exports = async function handler(req, res) {
   // ── 3. Init Supabase lazily (after env var check) ────────────────────────────
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  const now = new Date();
-  console.log(`[sync-matches] Tick at ${now.toISOString()}`);
+  const now   = new Date();
+  const force = req.query.force === "true" || req.query.force === "1";
+  console.log(`[sync-matches] Tick at ${now.toISOString()} | force=${force}`);
 
   try {
-    // ── 4. Check active match window ──────────────────────────────────────────
-    let inWindow = false;
-    try {
-      const { data: live } = await supabase
-        .from("matches").select("id").or("status.eq.LIVE,status.eq.HT").limit(1);
-      if (live && live.length > 0) {
+    // ── 4. Check active match window (bypassed when force=true) ──────────────
+    let inWindow = force;
+    if (!force) {
+      try {
+        const { data: live } = await supabase
+          .from("matches").select("id").or("status.eq.LIVE,status.eq.HT").limit(1);
+        if (live && live.length > 0) {
+          inWindow = true;
+        } else {
+          const windowStart = new Date(now.getTime() - 30 * 60 * 1000);
+          const windowEnd   = new Date(now.getTime() + 30 * 60 * 1000);
+          const { data: upcoming } = await supabase
+            .from("matches").select("id").eq("status", "SCHEDULED")
+            .gte("kickoff_utc", windowStart.toISOString())
+            .lte("kickoff_utc", windowEnd.toISOString()).limit(1);
+          inWindow = !!(upcoming && upcoming.length > 0);
+        }
+      } catch (windowErr) {
+        console.warn("[sync-matches] match window check failed:", windowErr.message);
         inWindow = true;
-      } else {
-        const windowStart = new Date(now.getTime() - 30 * 60 * 1000);
-        const windowEnd   = new Date(now.getTime() + 30 * 60 * 1000);
-        const { data: upcoming } = await supabase
-          .from("matches").select("id").eq("status", "SCHEDULED")
-          .gte("kickoff_utc", windowStart.toISOString())
-          .lte("kickoff_utc", windowEnd.toISOString()).limit(1);
-        inWindow = !!(upcoming && upcoming.length > 0);
       }
-    } catch (windowErr) {
-      console.warn("[sync-matches] match window check failed:", windowErr.message);
-      // Continue anyway — if Supabase is down we still want to hit the API
-      inWindow = true;
-    }
 
-    // Outside match window: only sync once per hour (minute 0–2)
-    if (!inWindow && now.getUTCMinutes() > 2 && now.getUTCMinutes() < 58) {
-      console.log("[sync-matches] No active match window — skipping this tick");
-      return res.status(200).json({ skipped: true, reason: "no_match_window" });
+      // Outside match window: only sync once per hour (minute 0–2)
+      if (!inWindow && now.getUTCMinutes() > 2 && now.getUTCMinutes() < 58) {
+        console.log("[sync-matches] No active match window — skipping this tick");
+        return res.status(200).json({ skipped: true, reason: "no_match_window" });
+      }
     }
 
     // ── 5. Fetch matches from football-data.org ───────────────────────────────
-    const dateFrom = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const dateTo   = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    // force=true: full tournament window (1 day ago → 60 days ahead)
+    // normal:     recent + near-future (1 day ago → 14 days ahead)
+    const dateFrom = new Date(now.getTime() -  1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const dateTo   = new Date(now.getTime() + (force ? 60 : 14) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const apiUrl   = `${FD_BASE}/competitions/${COMPETITION_ID}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
 
     console.log(`[sync-matches] Fetching: ${apiUrl}`);
@@ -228,6 +232,7 @@ module.exports = async function handler(req, res) {
     console.log(`[sync-matches] Done — ${matchCount} matches, ${standingCount} standings`);
     return res.status(200).json({
       success:       true,
+      force,
       matchCount,
       standingCount,
       inWindow,
